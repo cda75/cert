@@ -2,7 +2,8 @@
 *.exe
 *.pyc
 *.csv
-PID*
-COIN*
+*.cfg
+*.xls
+*.xlsx
 _*/*
 

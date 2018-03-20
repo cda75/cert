@@ -1,8 +1,10 @@
 from selenium import webdriver
+from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.support.ui import WebDriverWait
 from ConfigParser import SafeConfigParser
 from time import sleep
 import os
+import glob
 from smtplib import SMTP
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEText import MIMEText
@@ -11,6 +13,7 @@ from email.MIMEText import MIMEText
 
 cFile = 'config.cfg'
 admin = 'd.chestnov@inlinegroup.ru'
+reportFile = "cpapp_admin_cnt_xls_report_CertInd.xlsx"
 
 
 def sendmail(msg_txt="\nCertification Notification\n", recipients=admin):
@@ -47,10 +50,10 @@ def login():
 	button = config.get('xpath', 'login_button')
 	#Start session
 	profile = webdriver.FirefoxProfile()
-	profile.set_preference('browser.download.folderList', 2) # custom location
+	profile.set_preference('browser.download.folderList', 2) 
 	profile.set_preference('browser.download.manager.showWhenStarting', False)
 	profile.set_preference('browser.download.dir', os.getcwd())
-	profile.set_preference('browser.helperApps.neverAsk.saveToDisk', 'text/csv')
+	profile.set_preference('browser.helperApps.neverAsk.saveToDisk', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 	driver = webdriver.Firefox(firefox_profile=profile)
 	wait = WebDriverWait(driver, 10)
 	driver.maximize_window()
@@ -62,14 +65,6 @@ def login():
 	driver.find_element_by_xpath(button).click()
 	sleep(3)
 	return driver
-
-
-def get_status(drv):
-	config = SafeConfigParser()
-	config.read(cFile)
-	# Get User credentials
-	url = config.get('url', 'status')
-	drv.get(url)
 
 
 def get_report(drv):
@@ -86,17 +81,27 @@ def get_report(drv):
 	
 
 def download_report(drv):
+	if os.path.isfile(reportFile):
+		os.rename(reportFile, 'tmpFile')
 	config = SafeConfigParser()
 	config.read(cFile)
 	url = config.get('url', 'report')
 	drv.get(url)
 	sleep(3)
-	drv.get("https://getlog.cloudapps.cisco.com/WWChannels/GETLOG/services/reports/downloadReports?cert_type=ALL")
+	try:
+		drv.get("https://getlog.cloudapps.cisco.com/WWChannels/GETLOG/services/reports/downloadReports?cert_type=ALL")
+		os.rename(reportFile, 'cisco.xlsx')
+		os.remove('tmpFile')
+	except:
+		print "Ops, Error with file operation"
+	finally:
+		drv.quit()
+
 
 
 def main():
 	drv = login()
-	get_report(drv)
+	download_report(drv)
 
 
 

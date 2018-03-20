@@ -1,0 +1,8 @@
+*.log
+*.exe
+*.pyc
+*.csv
+PID*
+COIN*
+_*/*
+

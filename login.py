@@ -16,6 +16,7 @@ admin = 'd.chestnov@inlinegroup.ru'
 reportFile = "cpapp_admin_cnt_xls_report_CertInd.xlsx"
 
 
+
 def sendmail(msg_txt="\nCertification Notification\n", recipients=admin):
 	config = SafeConfigParser()
 	config.read(cFile)
@@ -56,7 +57,7 @@ def login():
 	profile.set_preference('browser.helperApps.neverAsk.saveToDisk', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 	driver = webdriver.Firefox(firefox_profile=profile)
 	wait = WebDriverWait(driver, 10)
-	driver.maximize_window()
+	#driver.maximize_window()
 	driver.get(url)
 	driver.find_element_by_xpath(user_input).send_keys(user)
 	driver.find_element_by_xpath(button).click()
@@ -76,32 +77,31 @@ def get_report(drv):
 	sleep(3)
 	drv.find_element_by_xpath("/html/body/div[3]/div/div/div[1]/div/img").click()
 	sleep(3)
-	drv.get("https://getlog.cloudapps.cisco.com/WWChannels/GETLOG/services/reports/downloadReports?cert_type=ALL")
-	return drv
-	
-
-def download_report(drv):
-	if os.path.isfile(reportFile):
-		os.rename(reportFile, 'tmpFile')
-	config = SafeConfigParser()
-	config.read(cFile)
-	url = config.get('url', 'report')
-	drv.get(url)
+	drv.find_element_by_xpath("/html/body/div[3]/div/div/div[2]/div[2]/div[1]/div/ul/li[8]/a").click()
+	sleep(3)
+	drv.find_element_by_xpath(button).click()
 	sleep(3)
 	try:
-		drv.get("https://getlog.cloudapps.cisco.com/WWChannels/GETLOG/services/reports/downloadReports?cert_type=ALL")
-		os.rename(reportFile, 'cisco.xlsx')
-		os.remove('tmpFile')
+		if os.path.isfile(reportFile):
+			os.rename(reportFile, 'tmpFile')
+		drv.find_element_by_xpath("/html/body/div[3]/div/div/div[2]/div[2]/div[2]/div[3]/div/form/table/tbody/tr[1]/td/b/a").click()
+		result = True
 	except:
 		print "Ops, Error with file operation"
+		result = False
 	finally:
 		drv.quit()
+		return result
 
 
 
 def main():
 	drv = login()
-	download_report(drv)
+	if get_report(drv):
+		if os.path.isfile('tmpFile'):
+			os.remove('tmpFile')
+	else:
+		os.rename('tmpFile', reportFile)
 
 
 

@@ -65,7 +65,7 @@ def login():
 	profile.set_preference('browser.download.manager.showWhenStarting', False)
 	profile.set_preference('browser.download.dir', os.getcwd())
 	profile.set_preference('browser.helperApps.neverAsk.saveToDisk', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-	driver = webdriver.Firefox(firefox_profile=profile)
+        driver = webdriver.Firefox(firefox_profile=profile)
 	wait = WebDriverWait(driver, 10)
 	#driver.maximize_window()
 	driver.get(url)
@@ -120,9 +120,14 @@ def report_to_dict(rFile = reportFile):
 	return df2.to_dict(orient='records')
 
 
+drv = login()
+get_report(drv)
+
+
 msg_header = 'Следующие сертификационные статусы Cisco близки к окончанию срока действия!\n\n'.decode('utf-8')
 admin_msg = ''
-for i in report_to_dict():
+d = report_to_dict()
+for i in d:
 	msg = "%s\t%s\t%s\t%s\t%s\n" %(i['First Name'].ljust(12), i['Last Name'].ljust(13), i['Certification'].ljust(12), i['Expiry Date'].strftime('%d-%b-%Y').ljust(12), i['Certification Description'])
 	recipient = i['Email']
 	#sendmail(msg_header + msg, recipient)

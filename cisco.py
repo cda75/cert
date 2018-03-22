@@ -28,7 +28,7 @@ def sendmail(msg_txt="\nCertification Expiry Warning!\n", subject = 'Certificati
 	msg['Subject'] = subject
 	msg.attach(MIMEText(msg_txt.encode('utf-8'),'plain'))
 	try:
-		server = SMTP('mail.inlinegroup.ru')
+		server = SMTP('10.8.50.75')
 		server.sendmail(sender, recipients, msg.as_string())
 		print '[+] E-mail to %s successfully sent' %recipients
 	except:
@@ -111,7 +111,7 @@ def report_to_dict(rFile = reportFile):
 
 
 drv = login()
-get_report(drv):
+get_report(drv)
 
 
 msg_header = 'Следующие сертификационные статусы Cisco близки к окончанию срока действия!\n\n'.decode('utf-8')

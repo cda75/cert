@@ -1,27 +1,32 @@
+# -*- coding: utf-8 -*-
+
+import pandas as pd
+from datetime import datetime, timedelta
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.support.ui import WebDriverWait
 from ConfigParser import SafeConfigParser
 from time import sleep
 import os
-import glob
 from smtplib import SMTP
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEText import MIMEText
 
 
 
+
+
 cFile = 'config.cfg'
 admin = 'd.chestnov@inlinegroup.ru'
 reportFile = "cpapp_admin_cnt_xls_report_CertInd.xlsx"
+outputFile = 'report.xlsx'
+checkDays = 100
+checkTime = datetime.now() + timedelta(checkDays)
 
 
 
-def sendmail(msg_txt="\nCertification Notification\n", recipients=admin):
-	config = SafeConfigParser()
-	config.read(cFile)
-	sender = config.get('email', 'sender')
-	subject = config.get('email', 'subject')
+def sendmail(msg_txt="\nCertification Expiry Warning!\n", subject = 'Certification Status Warning!', recipients=admin):
+	sender = 'info@inlinegroup.ru'
 	msg = MIMEMultipart()
 	msg['From'] = sender
 	msg['To'] = recipients
@@ -40,15 +45,14 @@ def sendmail(msg_txt="\nCertification Notification\n", recipients=admin):
 def login():
 	config = SafeConfigParser()
 	config.read(cFile)
+	user_input = '//*[@id="userInput"]'
+	password_input = '//*[@id="passwordInput"]'
+	button = '//*[@id="login-button"]'
 	# Get User credentials
 	user = config.get('auth', 'user')
 	password = config.get('auth', 'password')
 	# Get Login URL
 	url = config.get('url', 'login')
-	#Get Elements XPath
-	user_input = config.get('xpath', 'user_input')
-	password_input = config.get('xpath', 'password_input')
-	button = config.get('xpath', 'login_button')
 	#Start session
 	profile = webdriver.FirefoxProfile()
 	profile.set_preference('browser.download.folderList', 2) 
@@ -69,17 +73,14 @@ def login():
 
 
 def get_report(drv):
-	config = SafeConfigParser()
-	config.read(cFile)
-	url = config.get('url', 'report')
-	button = config.get('xpath', 'geo_select')
+	url = "https://getlog.cloudapps.cisco.com/WWChannels/GETLOG/welcome.do#/reports"
 	drv.get(url)
 	sleep(3)
 	drv.find_element_by_xpath("/html/body/div[3]/div/div/div[1]/div/img").click()
 	sleep(3)
 	drv.find_element_by_xpath("/html/body/div[3]/div/div/div[2]/div[2]/div[1]/div/ul/li[8]/a").click()
 	sleep(3)
-	drv.find_element_by_xpath(button).click()
+	drv.find_element_by_xpath("/html/body/div[5]/div/div/div[3]/div/server-directive/div[2]/table/tbody/tr/td/div/div[2]/button").click()
 	sleep(3)
 	try:
 		if os.path.isfile(reportFile):
@@ -87,7 +88,7 @@ def get_report(drv):
 		drv.find_element_by_xpath("/html/body/div[3]/div/div/div[2]/div[2]/div[2]/div[3]/div/form/table/tbody/tr[1]/td/b/a").click()
 		result = True
 	except:
-		print "Ops, Error with file operation"
+		print "Oops! Error with file operation"
 		result = False
 	finally:
 		drv.quit()
@@ -95,19 +96,38 @@ def get_report(drv):
 
 
 
-def main():
-	drv = login()
-	if get_report(drv):
-		if os.path.isfile('tmpFile'):
-			os.remove('tmpFile')
-	else:
-		os.rename('tmpFile', reportFile)
+def report_to_dict(rFile = reportFile):
+	#Read execl to Data Frame and convert object to datetime
+	df = pd.read_excel(rFile)
+	df["Expiry Date"] = pd.to_datetime(df["Expiry Date"])
+	#Check datetime
+	df1 = df[(df["Expiry Date"] < checkTime)]
+	df2 = df1.loc[:,["First Name", "Last Name", "Email", "Certification", "Certification Description", "Expiry Date"]]
+	#Write to Excel
+	writer = pd.ExcelWriter(reportFile)
+	df2.to_excel(writer, 'Sheet1', index_label=False, index=False, header=True)
+	writer.save()
+	#convert to Dictionary
+	return df2.to_dict(orient='records')
 
 
-
-if __name__ == '__main__':
-	main()
-
+drv = login()
+get_report(drv)
 
 
+msg_header = 'Следующие сертификационные статусы Cisco близки к окончанию срока действия!\n\n'.decode('utf-8')
+admin_msg = ''
+d = report_to_dict()
+for i in d:
+	msg = "%s\t%s\t%s\t%s\t%s\n" %(i['First Name'].ljust(12), i['Last Name'].ljust(13), i['Certification'].ljust(12), i['Expiry Date'].strftime('%d-%b-%Y').ljust(12), i['Certification Description'])
+	recipient = i['Email']
+	#sendmail(msg_header + msg, recipient)
+	print msg
+	admin_msg += msg
 
+
+if admin_msg:
+	sendmail(msg_header+admin_msg)
+	print admin_msg
+else:
+	print "No messages"

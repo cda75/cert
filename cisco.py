@@ -85,13 +85,13 @@ def get_report(drv):
 			os.rename(reportFile, 'tmp')
 	try:
 		drv.find_element_by_xpath("/html/body/div[3]/div/div/div[2]/div[2]/div[2]/div[3]/div/form/table/tbody/tr[1]/td/b/a").click()
-		result = True
+		os.remove('tmp')
 	except Exception as e:
 		print e
-		result = False
+		os.rename('tmp', reportFile)
 	finally:
 		drv.quit()
-		return result
+
 
 
 
@@ -111,10 +111,8 @@ def report_to_dict(rFile = reportFile):
 
 
 drv = login()
-if get_report(drv):
-	os.remove('tmp')	
-else:
-	os.rename('tmp', reportFile)
+get_report(drv):
+
 
 msg_header = 'Следующие сертификационные статусы Cisco близки к окончанию срока действия!\n\n'.decode('utf-8')
 admin_msg = ''

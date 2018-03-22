@@ -3,8 +3,6 @@
 import pandas as pd
 from datetime import datetime, timedelta
 from selenium import webdriver
-from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
-from selenium.webdriver.support.ui import WebDriverWait
 from ConfigParser import SafeConfigParser
 from time import sleep
 import os
@@ -14,15 +12,12 @@ from email.MIMEText import MIMEText
 
 
 
-
-
 cFile = 'config.cfg'
 admin = 'd.chestnov@inlinegroup.ru'
 reportFile = "cpapp_admin_cnt_xls_report_CertInd.xlsx"
 outputFile = 'report.xlsx'
 checkDays = 100
 checkTime = datetime.now() + timedelta(checkDays)
-
 
 
 def sendmail(msg_txt="\nCertification Expiry Warning!\n", subject = 'Certification Status Warning!', recipients=admin):
@@ -35,11 +30,20 @@ def sendmail(msg_txt="\nCertification Expiry Warning!\n", subject = 'Certificati
 	try:
 		server = SMTP('mail.inlinegroup.ru')
 		server.sendmail(sender, recipients, msg.as_string())
-		print '[+] E-mail successfully sent'
+		print '[+] E-mail to %s successfully sent' %recipients
 	except:
 		print "[-] Error sending e-mail"
 	finally:
 		server.quit()
+
+
+def set_Firefox_profile():
+	profile = webdriver.FirefoxProfile()
+	profile.set_preference('browser.download.folderList', 2) 
+	profile.set_preference('browser.download.manager.showWhenStarting', False)
+	profile.set_preference('browser.download.dir', os.getcwd())
+	profile.set_preference('browser.helperApps.neverAsk.saveToDisk', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+	return profile
 
 
 def login():
@@ -53,15 +57,8 @@ def login():
 	password = config.get('auth', 'password')
 	# Get Login URL
 	url = config.get('url', 'login')
-	#Start session
-	profile = webdriver.FirefoxProfile()
-	profile.set_preference('browser.download.folderList', 2) 
-	profile.set_preference('browser.download.manager.showWhenStarting', False)
-	profile.set_preference('browser.download.dir', os.getcwd())
-	profile.set_preference('browser.helperApps.neverAsk.saveToDisk', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+	profile = set_Firefox_profile()
 	driver = webdriver.Firefox(firefox_profile=profile)
-	wait = WebDriverWait(driver, 10)
-	#driver.maximize_window()
 	driver.get(url)
 	driver.find_element_by_xpath(user_input).send_keys(user)
 	driver.find_element_by_xpath(button).click()
@@ -82,13 +79,15 @@ def get_report(drv):
 	sleep(3)
 	drv.find_element_by_xpath("/html/body/div[5]/div/div/div[3]/div/server-directive/div[2]/table/tbody/tr/td/div/div[2]/button").click()
 	sleep(3)
+	if os.path.isfile('tmp'):
+			os.remove('tmp')
+	if os.path.isfile(reportFile):
+			os.rename(reportFile, 'tmp')
 	try:
-		if os.path.isfile(reportFile):
-			os.rename(reportFile, 'tmpFile')
 		drv.find_element_by_xpath("/html/body/div[3]/div/div/div[2]/div[2]/div[2]/div[3]/div/form/table/tbody/tr[1]/td/b/a").click()
 		result = True
-	except:
-		print "Oops! Error with file operation"
+	except Exception as e:
+		print e
 		result = False
 	finally:
 		drv.quit()
@@ -104,7 +103,7 @@ def report_to_dict(rFile = reportFile):
 	df1 = df[(df["Expiry Date"] < checkTime)]
 	df2 = df1.loc[:,["First Name", "Last Name", "Email", "Certification", "Certification Description", "Expiry Date"]]
 	#Write to Excel
-	writer = pd.ExcelWriter(reportFile)
+	writer = pd.ExcelWriter(outputFile)
 	df2.to_excel(writer, 'Sheet1', index_label=False, index=False, header=True)
 	writer.save()
 	#convert to Dictionary
@@ -112,8 +111,10 @@ def report_to_dict(rFile = reportFile):
 
 
 drv = login()
-get_report(drv)
-
+if get_report(drv):
+	os.remove('tmp')	
+else:
+	os.rename('tmp', reportFile)
 
 msg_header = 'Следующие сертификационные статусы Cisco близки к окончанию срока действия!\n\n'.decode('utf-8')
 admin_msg = ''
@@ -131,3 +132,4 @@ if admin_msg:
 	print admin_msg
 else:
 	print "No messages"
+

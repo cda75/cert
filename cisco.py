@@ -13,7 +13,7 @@ from email.MIMEText import MIMEText
 
 
 cFile = 'config.cfg'
-admin = 'd.chestnov@inlinegroup.ru'
+admin = ['d.chestnov@inlinegroup.ru', 's.koptenkova@inlinegroup.ru']
 reportFile = "cpapp_admin_cnt_xls_report_CertInd.xlsx"
 outputFile = 'report.xlsx'
 checkDays = 100
@@ -24,7 +24,7 @@ def sendmail(msg_txt="\nCertification Expiry Warning!\n", subject = 'Certificati
 	sender = 'info@inlinegroup.ru'
 	msg = MIMEMultipart()
 	msg['From'] = sender
-	msg['To'] = recipients
+	msg['To'] = ", ".join(recipients)
 	msg['Subject'] = subject
 	msg.attach(MIMEText(msg_txt.encode('utf-8'),'plain'))
 	try:
@@ -88,7 +88,8 @@ def get_report(drv):
 		os.remove('tmp')
 	except Exception as e:
 		print e
-		os.rename('tmp', reportFile)
+                if os.path.isfile('tmp'):
+		    os.rename('tmp', reportFile)
 	finally:
 		drv.quit()
 
@@ -113,6 +114,7 @@ def report_to_dict(rFile = reportFile):
 drv = login()
 get_report(drv)
 
+print datetime.now().strftime("%d-%b-%Y %H:%M")
 
 msg_header = 'Следующие сертификационные статусы Cisco близки к окончанию срока действия!\n\n'.decode('utf-8')
 admin_msg = ''

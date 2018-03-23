@@ -13,7 +13,7 @@ from email.MIMEText import MIMEText
 
 
 cFile = 'config.cfg'
-admin = ['d.chestnov@inlinegroup.ru', 's.koptenkova@inlinegroup.ru']
+admin = ['d.chestnov@inlinegroup.ru', 's.koptenkova@inlinegroup.ru', 'k.tikhanovski@inlinegroup.ru']
 reportFile = "cpapp_admin_cnt_xls_report_CertInd.xlsx"
 outputFile = 'report.xlsx'
 checkDays = 100

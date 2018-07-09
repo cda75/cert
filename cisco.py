@@ -3,6 +3,7 @@
 import pandas as pd
 from datetime import datetime, timedelta
 from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
 from ConfigParser import SafeConfigParser
 from time import sleep
 import os
@@ -61,7 +62,9 @@ def login():
 	# Get Login URL
 	url = config.get('url', 'login')
 	profile = set_Firefox_profile()
-	driver = webdriver.Firefox(firefox_profile=profile)
+        options = Options()
+        options.set_headless(headless=True)
+	driver = webdriver.Firefox(firefox_options=options, firefox_profile=profile)
 	driver.get(url)
 	driver.find_element_by_xpath(user_input).send_keys(user)
 	driver.find_element_by_xpath(button).click()

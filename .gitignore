@@ -1,9 +1,0 @@
-*.log
-*.exe
-*.pyc
-*.csv
-*.cfg
-*.xls
-*.xlsx
-_*/*
-

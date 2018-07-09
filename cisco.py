@@ -14,17 +14,19 @@ from email.MIMEText import MIMEText
 
 cFile = 'config.cfg'
 admin = 'd.chestnov@inlinegroup.ru d.chestnov@gmail.com'
+#admin = ['d.chestnov@inlinegroup.ru', 'networkers@inlinegroup.ru']
 reportFile = "cpapp_admin_cnt_xls_report_CertInd.xlsx"
 outputFile = 'report.xlsx'
-checkDays = 100
+checkDays = 260
 checkTime = datetime.now() + timedelta(checkDays)
+EMAIL = False
 
 
 def sendmail(msg_txt="\nCertification Expiry Warning!\n", subject = 'Certification Status Warning!', recipients=admin):
 	sender = 'info@inlinegroup.ru'
 	msg = MIMEMultipart()
 	msg['From'] = sender
-	msg['To'] = recipients
+	msg['To'] = ", ".join(recipients)
 	msg['Subject'] = subject
 	msg.attach(MIMEText(msg_txt.encode('utf-8'),'plain'))
 	try:
@@ -88,7 +90,8 @@ def get_report(drv):
 		os.remove('tmp')
 	except Exception as e:
 		print e
-		os.rename('tmp', reportFile)
+                if os.path.isfile('tmp'):
+		    os.rename('tmp', reportFile)
 	finally:
 		drv.quit()
 
@@ -113,6 +116,7 @@ def report_to_dict(rFile = reportFile):
 drv = login()
 get_report(drv)
 
+print datetime.now().strftime("%d-%b-%Y %H:%M")
 
 msg_header = 'Следующие сертификационные статусы Cisco близки к окончанию срока действия!\n\n'.decode('utf-8')
 admin_msg = ''
@@ -125,9 +129,9 @@ for i in d:
 	admin_msg += msg
 
 
-if admin_msg:
+if admin_msg and EMAIL:
 	sendmail(msg_header+admin_msg)
-	print admin_msg
-else:
-	print "No messages"
+
+print admin_msg
+
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 SHELL=/bin/bash
-PATH=/home/dimka/bin:/home/dimka/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
 export DISPLAY=:99
 /etc/init.d/xvfb start
+date
 echo "Xvfb started at DISPLAY 99"
 date
 cd /home/dimka/cert

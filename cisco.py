@@ -13,12 +13,14 @@ from email.MIMEText import MIMEText
 
 
 cFile = 'config.cfg'
-admin = ['d.chestnov@inlinegroup.ru', 'networkers@inlinegroup.ru']
+#admin = ['d.chestnov@inlinegroup.ru', 'networkers@inlinegroup.ru']
+admin = ['d.chestnov@inlinegroup.ru']
 reportFile = "cpapp_admin_cnt_xls_report_CertInd.xlsx"
 outputFile = 'report.xlsx'
-checkDays = 260
+checkDays = 100
 checkTime = datetime.now() + timedelta(checkDays)
-EMAIL = False
+EMAIL_ADMIN = True
+EMAIL_ALL = False
 
 
 def sendmail(msg_txt="\nCertification Expiry Warning!\n", subject = 'Certification Status Warning!', recipients=admin):
@@ -123,12 +125,12 @@ d = report_to_dict()
 for i in d:
 	msg = "%s\t%s\t%s\t%s\t%s\n" %(i['First Name'].ljust(12), i['Last Name'].ljust(13), i['Certification'].ljust(12), i['Expiry Date'].strftime('%d-%b-%Y').ljust(12), i['Certification Description'])
 	recipient = i['Email']
-	#sendmail(msg_header + msg, recipient)
-	print msg
+	if EMAIL_ALL:
+		sendmail(msg_header + msg, recipient)
 	admin_msg += msg
 
 
-if admin_msg and EMAIL:
+if admin_msg and EMAIL_ADMIN:
 	sendmail(msg_header+admin_msg)
 
 print admin_msg
